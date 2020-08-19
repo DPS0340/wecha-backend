@@ -1,6 +1,6 @@
 from django.db import models
 
-from films.models import Film
+from film.models import Film
 
 class User(models.Model):
     email          = models.EmailField(max_length=256)
