@@ -19,10 +19,10 @@ class ServiceProvider(models.Model):
         db_table = "service_providers"
 
 class Film(models.Model):
-    name_kr          = models.CharField(max_length=512)
-    name_en          = models.CharField(max_length=256, null=True)
+    korean_title     = models.CharField(max_length=512)
+    original_title   = models.CharField(max_length=256, null=True)
     release_date     = models.DateField()
-    running_time     = models.IntegerField()
+    running_time     = models.TimeField()
     description      = models.TextField()
     poster_url       = models.URLField(max_length=2048, null=True)
     avg_rating       = models.DecimalField(max_digits=2, decimal_places=1)
@@ -54,7 +54,7 @@ class FilmURL(models.Model):
 
 class Person(models.Model):
     name         = models.CharField(max_length=256)
-    face_img_url = models.URLField(max_length=2048, null=True)
+    face_image_url = models.URLField(max_length=2048, null=True)
 
     class Meta:
         db_table = "people"
