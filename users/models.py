@@ -7,7 +7,7 @@ class User(models.Model):
     password       = models.CharField(max_length=512)
     name           = models.CharField(max_length=128)
     description    = models.TextField(null=True)
-    face_url       = models.URLField(max_length=2048, null=True)
+    face_image_url = models.URLField(max_length=2048, null=True)
     minute_watched = models.IntegerField(default=0)
 
     class Meta:
