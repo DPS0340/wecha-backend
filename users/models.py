@@ -22,7 +22,12 @@ class Collection(models.Model):
         db_table = "collections"
         
 class ReviewType(models.Model):
-    name = models.CharField(max_length=128)
+    TYPE_CHOICES = (
+        ('R', 'Rated'),
+        ('W', 'Wish'),
+        ('O', 'Ongoing'),
+    )
+    name = models.CharField(max_length=128, choices=TYPE_CHOICES)
 
     class Meta:
         db_table = "review_types"
