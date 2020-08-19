@@ -34,7 +34,11 @@ class Film(models.Model):
         db_table = "films"
 
 class FilmURLType(models.Model):
-    name = models.CharField(max_length=64)
+    TYPE_CHOICES = (
+        ('VID', 'video'),
+        ('IMG', 'image'),
+    )
+    name = models.CharField(max_length=32, choices=TYPE_CHOICES)
 
     class Meta:
         db_table = "film_url_types"
