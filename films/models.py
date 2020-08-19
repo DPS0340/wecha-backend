@@ -35,8 +35,9 @@ class Film(models.Model):
 
 class FilmURLType(models.Model):
     TYPE_CHOICES = (
-        ('VID', 'video'),
-        ('IMG', 'image'),
+        ('V', 'Video'),
+        ('I', 'Image'),
+        ('B', 'Background'),
     )
     name = models.CharField(max_length=32, choices=TYPE_CHOICES)
 
@@ -45,7 +46,7 @@ class FilmURLType(models.Model):
 
 class FilmURL(models.Model): 
     url           = models.URLField(max_length=2048)
-    film_url_type = models.ForeignKey(FilmURLType, on_delete=models.PROTECT)
+    film_url_type = models.ForeignKey(FilmURLType, on_delete=models.CASCADE)
     film          = models.ForeignKey(Film, on_delete=models.CASCADE)
     
     class Meta:
