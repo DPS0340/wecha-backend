@@ -45,7 +45,7 @@ class FilmURLType(models.Model):
         db_table = "film_url_types"
 
 class FilmURL(models.Model): 
-    url           = models.URLField(max_length=2048)
+    url           = models.URLField(max_length=2048, null=True)
     film_url_type = models.ForeignKey(FilmURLType, on_delete=models.CASCADE)
     film          = models.ForeignKey(Film, on_delete=models.CASCADE)
     
