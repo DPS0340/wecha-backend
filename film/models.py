@@ -49,7 +49,11 @@ class Film(models.Model):
     running_time     = models.TimeField()
     description      = models.TextField()
     poster_url       = models.URLField(max_length=2048, null=True)
-    avg_rating       = models.DecimalField(max_digits=2, decimal_places=1)
+    avg_rating       = models.DecimalField(
+        max_digits     = 2,
+        decimal_places = 1,
+        default        = 0.0
+    )
     country          = models.ManyToManyField(
         'Country', 
         through='FilmCountry'
