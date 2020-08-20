@@ -6,17 +6,41 @@ class Country(models.Model):
     class Meta:
         db_table = "countries"
 
+class FilmCountry(models.Model):
+    film    = models.ForeignKey('Film', on_delete=models.CASCADE)
+    country = models.ForeignKey('Country', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "film_countries"
+
 class Genre(models.Model):
     name = models.CharField(max_length=64)
 
     class Meta:
         db_table = "genres"
 
+class FilmGenre(models.Model):
+    film  = models.ForeignKey('Film', on_delete=models.CASCADE)
+    genre = models.ForeignKey('Genre', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "film_genres"
+
 class ServiceProvider(models.Model):
     name = models.CharField(max_length=64)
 
     class Meta:
         db_table = "service_providers"
+
+class FilmServiceProvider(models.Model):
+    film             = models.ForeignKey('Film', on_delete=models.CASCADE)
+    service_provider = models.ForeignKey(
+        'ServiceProvider', 
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        db_table = "film_service_providers"
 
 class Film(models.Model):
     korean_title     = models.CharField(max_length=512)
@@ -26,34 +50,36 @@ class Film(models.Model):
     description      = models.TextField()
     poster_url       = models.URLField(max_length=2048, null=True)
     avg_rating       = models.DecimalField(max_digits=2, decimal_places=1)
-    country          = models.ManyToManyField(Country)
-    genre            = models.ManyToManyField(Genre)
-    service_provider = models.ManyToManyField(ServiceProvider)
+    country          = models.ManyToManyField(
+        'Country', 
+        through='FilmCountry'
+    )
+    genre            = models.ManyToManyField('Genre', through='FilmGenre')
+    service_provider = models.ManyToManyField(
+        'ServiceProvider', 
+        through='FilmServiceProvider'
+    )
+    person           = models.ManyToManyField('Person', through='Cast')
 
     class Meta:
         db_table = "films"
 
 class FilmURLType(models.Model):
-    TYPE_CHOICES = (
-        ('V', 'Video'),
-        ('I', 'Image'),
-        ('B', 'Background'),
-    )
-    name = models.CharField(max_length=32, choices=TYPE_CHOICES)
+    name = models.CharField(max_length=32)
 
     class Meta:
         db_table = "film_url_types"
 
 class FilmURL(models.Model): 
-    url           = models.URLField(max_length=2048)
-    film_url_type = models.ForeignKey(FilmURLType, on_delete=models.CASCADE)
-    film          = models.ForeignKey(Film, on_delete=models.CASCADE)
+    url           = models.URLField(max_length=2048, null=True)
+    film_url_type = models.ForeignKey('FilmURLType', on_delete=models.CASCADE)
+    film          = models.ForeignKey('Film', on_delete=models.CASCADE)
     
     class Meta:
         db_table = "film_urls"
 
 class Person(models.Model):
-    name         = models.CharField(max_length=256)
+    name           = models.CharField(max_length=256)
     face_image_url = models.URLField(max_length=2048, null=True)
 
     class Meta:
@@ -61,8 +87,8 @@ class Person(models.Model):
 
 class Cast(models.Model):
     role   = models.CharField(max_length=128)
-    film   = models.ForeignKey(Film, on_delete=models.CASCADE)
-    person = models.ForeignKey(Person, on_delete=models.CASCADE)
+    film   = models.ForeignKey('Film', on_delete=models.CASCADE)
+    person = models.ForeignKey('Person', on_delete=models.CASCADE)
 
     class Meta:
         db_table = "casts"
