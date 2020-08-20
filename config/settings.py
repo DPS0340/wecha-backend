@@ -42,6 +42,7 @@ INSTALLED_APPS = [
 
     # 3rd party
     'corsheaders',
+    'django_extensions',
 
     # local
     'film.apps.FilmConfig',
