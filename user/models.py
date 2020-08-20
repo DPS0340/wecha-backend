@@ -42,14 +42,7 @@ class Review(models.Model):
     like_count  = models.IntegerField(default=0)
     review_type = models.ForeignKey('ReviewType', on_delete=models.CASCADE)
     film        = models.ForeignKey('film.Film', on_delete=models.CASCADE)
-    user        = models.ManyToManyField('User')
+    user        = models.ForeignKey('User', on_delete=models.CASCADE)
 
     class Meta:
         db_table = "reviews"
-
-class UserReview(models.Model):
-    user   = models.ForeignKey('User', on_delete=models.CASCADE)
-    review = models.ForeignKey('Review', on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = "user_reviews"
