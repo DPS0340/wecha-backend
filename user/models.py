@@ -1,7 +1,5 @@
 from django.db import models
 
-from film.models import Film
-
 class User(models.Model):
     email          = models.EmailField(max_length=256)
     password       = models.CharField(max_length=512)
@@ -16,13 +14,13 @@ class User(models.Model):
 class Collection(models.Model):
     name = models.CharField(max_length=512)
     user = models.ForeignKey('User', on_delete=models.CASCADE)
-    film = models.ManyToManyField('Film', through="FilmCollection")
+    film = models.ManyToManyField('film.Film', through="FilmCollection")
 
     class Meta:
         db_table = "collections"
 
 class FilmCollection(models.Model): 
-    film       = models.ForeignKey('Film' on_delete=models.CASCADE)
+    film       = models.ForeignKey('film.Film', on_delete=models.CASCADE)
     collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
 
     class Meta:
@@ -43,7 +41,7 @@ class Review(models.Model):
     comment     = models.TextField(null=True)
     like_count  = models.IntegerField(default=0)
     review_type = models.ForeignKey('ReviewType', on_delete=models.CASCADE)
-    film        = models.ForeignKey('Film', on_delete=models.CASCADE)
+    film        = models.ForeignKey('film.Film', on_delete=models.CASCADE)
     user        = models.ManyToManyField('User')
 
     class Meta:
