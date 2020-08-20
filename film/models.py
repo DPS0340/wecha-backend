@@ -50,9 +50,15 @@ class Film(models.Model):
     description      = models.TextField()
     poster_url       = models.URLField(max_length=2048, null=True)
     avg_rating       = models.DecimalField(max_digits=2, decimal_places=1)
-    country          = models.ManyToManyField('Country', through='FilmCountry')
+    country          = models.ManyToManyField(
+        'Country', 
+        through='FilmCountry'
+    )
     genre            = models.ManyToManyField('Genre', through='FilmGenre')
-    service_provider = models.ManyToManyField('ServiceProvider', through='FilmServiceProvider')
+    service_provider = models.ManyToManyField(
+        'ServiceProvider', 
+        through='FilmServiceProvider'
+    )
     person           = models.ManyToManyField('Person', through='Cast')
 
     class Meta:
