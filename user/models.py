@@ -12,9 +12,10 @@ class User(models.Model):
         db_table = "users"
 
 class Collection(models.Model):
-    name = models.CharField(max_length=512)
-    user = models.ForeignKey('User', on_delete=models.CASCADE)
-    film = models.ManyToManyField('film.Film', through="FilmCollection")
+    name        = models.CharField(max_length=512)
+    description = models.TextField()
+    user        = models.ForeignKey('User', on_delete=models.CASCADE)
+    film        = models.ManyToManyField('film.Film', through="FilmCollection")
 
     class Meta:
         db_table = "collections"
