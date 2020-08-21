@@ -1,5 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,django,macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,python,django,macos
+### VSCode ###
+.vscode
+
 ### Pipenv ###
 Pipfile
 Pipfile.lock
