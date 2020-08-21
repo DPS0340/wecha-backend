@@ -2,7 +2,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,python,django,macos
 ### Project ###
 scripts
-wecha_films.csv
+*.csv
 
 ### VSCode ###
 .vscode
