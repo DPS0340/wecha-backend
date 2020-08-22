@@ -16,7 +16,7 @@ from user.models import (
     User
 )
 
-class FilmRankingView(View):
+class FilmRankingByServiceProvierView(View):
     def get(self, request):
         service_provider_name = request.GET.get('sp', None)
         if ServiceProvider.objects                              \
