@@ -311,3 +311,26 @@ class FilmCollectionListView(View):
             data["collections"].append(body)
 
         return JsonResponse(data, status = 200)
+
+class FilmSearchView(View):
+    def get(self, request):
+        search_term = request.GET.get('term', None)
+        if search_term:
+            data = {
+                "search_results": []
+            }
+            film_queryset = Film.objects.filter(korean_title__icontains=search_term)[:9]
+            for film_query in film_queryset:
+                body = {
+                    "id": film_query.pk,
+                    "korean_title": film_query.korean_title
+                }
+                
+                data["search_results"].append(body)
+            
+            return JsonResponse(data, status = 200)
+
+        return JsonResponse(
+            {"message": "INVALID_QUERY_PARAMETER_TERM"},
+            status = 400
+        ) 

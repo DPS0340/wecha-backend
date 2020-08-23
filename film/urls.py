@@ -4,7 +4,8 @@ from .views import (
     FilmRankingView,
     FilmDetailView,
     FilmRecommendationView,
-    FilmCollectionListView
+    FilmCollectionListView,
+    FilmSearchView,
 )
 
 app_name = 'film'
@@ -13,5 +14,6 @@ urlpatterns = [
     path('ranking', FilmRankingView.as_view(), name="ranking"),
     path('<int:film_id>', FilmDetailView.as_view(), name="detail"),
     path('recommendation', FilmRecommendationView.as_view(), name="recommendation"),
-    path('collections', FilmCollectionListView.as_view(), name="collections")
+    path('collections', FilmCollectionListView.as_view(), name="collections"),
+    path('search', FilmSearchView.as_view(), name="search"),
 ]
