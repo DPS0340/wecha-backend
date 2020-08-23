@@ -292,3 +292,22 @@ class FilmRecommendationView(View):
             {"message": "INVALID_QUERY_PARAMETER_WAY"},
             status = 400
         )
+
+class FilmCollectionListView(View):
+    def get(self, request):
+        data = {
+            "collections": []
+        }
+
+        collection_queryset = Collection.objects.all().order_by('?')[:12]
+        for collection_query in collection_queryset:
+            film_collection_queryset = FilmCollection.objects.filter(collection=collection_query).select_related('film')[:4]
+            poster_urls = [film_collection_query.film.poster_url for film_collection_query in film_collection_queryset]
+            body = {
+                "id": collection_query.pk,
+                "name": collection_query.name,
+                "poster_urls": poster_urls,
+            }
+            data["collections"].append(body)
+
+        return JsonResponse(data, status = 200)
