@@ -19,6 +19,7 @@ from user.models import (
     Collection,
     Review,
     User,
+    FilmCollection,
 )
 
 class FilmRankingView(View):
@@ -105,10 +106,13 @@ class FilmDetailView(View):
             collections = []
             collection_queryset = Collection.objects.filter(film=film)
             for collection_query in collection_queryset:
+                film_collection_queryset = FilmCollection.objects.filter(collection=collection_query).select_related('film')[:4]
+                poster_urls = [film_collection_query.film.poster_url for film_collection_query in film_collection_queryset]
                 collections.append({
                     "id"     : collection_query.id,
                     "name"   : collection_query.name,
                     "user_id": collection_query.user.id,
+                    "poster_urls": poster_urls
                 })
 
             reviews = []
