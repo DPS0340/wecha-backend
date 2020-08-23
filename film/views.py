@@ -1,3 +1,5 @@
+from collections import Counter
+
 from django.views     import View
 from django.http      import JsonResponse
 from django.db.models import Count
@@ -8,12 +10,15 @@ from .models import (
     ServiceProvider,
     FilmURL,
     Person,
-    Cast
+    Cast,
+    Genre,
+    FilmGenre,
+    FilmCountry,
 )
 from user.models import (
     Collection,
     Review,
-    User
+    User,
 )
 
 class FilmRankingView(View):
@@ -149,5 +154,137 @@ class FilmDetailView(View):
 
         return JsonResponse(
             {"message": "INVALID_PATH_VARIABLE_FILM_ID"},
+            status = 400
+        )
+
+class FilmRecommendationView(View):
+    def get(self, request):
+        way_to_recommend = request.GET.get('way', None)
+        if way_to_recommend == "genre":
+
+            # TODO: 로그인 되어있는지 확인 처리
+            if User.objects.filter(pk = 101).exists():
+                genre_count_dict = {}
+                user = User.objects.get(pk = 101)
+                review_queryset = Review.objects.filter(user = user).select_related('film')[:10]
+                for review_query in review_queryset:
+                    film_genre_queryset = FilmGenre.objects.filter(film=review_query.film).select_related('genre')
+                    for film_genre_query in film_genre_queryset:
+                        genre_name = film_genre_query.genre.name
+                        if genre_name in genre_count_dict:
+                            genre_count_dict[genre_name] += 1
+                        else:
+                            genre_count_dict[genre_name] = 1
+                
+                most_genre_name, _ = Counter(genre_count_dict).most_common(1)[0]
+                most_genre = Genre.objects.get(name=most_genre_name)
+                film_queryset = Film.objects.filter(genre=most_genre)[:12]
+                
+                data = {
+                    "films": []
+                }
+                for film_query in film_queryset:
+                    country_names = [
+                        country['name'] for country in film_query.country.values()
+                    ]
+                    service_provider_names = [
+                        service_provider['name'] for service_provider in film_query.service_provider.values()
+                    ]
+
+                    body = {
+                        "id"               : film_query.id,
+                        "title"            : film_query.korean_title,
+                        "countries"        : country_names,
+                        "year"             : film_query.release_date.year,
+                        "avg_rating"       : film_query.avg_rating,
+                        "poster_url"       : film_query.poster_url,
+                        "service_providers": service_provider_names
+                    }
+                    data["films"].append(body)
+                return JsonResponse(data, status = 200)
+        if way_to_recommend == "country":
+            if User.objects.filter(pk = 101).exists():
+                country_count_dict = {}
+                user = User.objects.get(pk = 101)
+                review_queryset = Review.objects.filter(user = user).select_related('film')[:10]
+                for review_query in review_queryset:
+                    film_country_queryset = FilmCountry.objects.filter(film=review_query.film).select_related('country')
+                    for film_country_query in film_country_queryset:
+                        country_name = film_country_query.country.name
+                        if country_name in country_count_dict:
+                            country_count_dict[country_name] += 1
+                        else:
+                            country_count_dict[country_name] = 1
+                
+                most_country_name, _ = Counter(country_count_dict).most_common(1)[0]
+                most_country = Country.objects.get(name=most_country_name)
+                film_queryset = Film.objects.filter(country=most_country)[:12]
+                
+                data = {
+                    "films": []
+                }
+                for film_query in film_queryset:
+                    country_names = [
+                        country['name'] for country in film_query.country.values()
+                    ]
+                    service_provider_names = [
+                        service_provider['name'] for service_provider in film_query.service_provider.values()
+                    ]
+
+                    body = {
+                        "id"               : film_query.id,
+                        "title"            : film_query.korean_title,
+                        "countries"        : country_names,
+                        "year"             : film_query.release_date.year,
+                        "avg_rating"       : film_query.avg_rating,
+                        "poster_url"       : film_query.poster_url,
+                        "service_providers": service_provider_names
+                    }
+                    data["films"].append(body)
+                return JsonResponse(data, status = 200)
+        if way_to_recommend == "person":
+            if User.objects.filter(pk = 101).exists():
+                person_count_dict = {}
+                user = User.objects.get(pk = 101)
+                review_queryset = Review.objects.filter(user = user).select_related('film')[:10]
+                for review_query in review_queryset:
+                    cast_queryset = Cast.objects.filter(film=review_query.film).select_related('person')
+                    for cast_query in cast_queryset:
+                        person_id = cast_query.person.id
+                        if person_id in person_count_dict:
+                            person_count_dict[person_id] += 1
+                        else:
+                            person_count_dict[person_id] = 1
+                
+                most_person_id, _ = Counter(person_count_dict).most_common(1)[0]
+                most_person = Person.objects.get(id=most_person_id)
+                print(most_person.name)
+                film_queryset = Film.objects.filter(person=most_person)[:12]
+                
+                data = {
+                    "films": []
+                }
+                for film_query in film_queryset:
+                    country_names = [
+                        country['name'] for country in film_query.country.values()
+                    ]
+                    service_provider_names = [
+                        service_provider['name'] for service_provider in film_query.service_provider.values()
+                    ]
+
+                    body = {
+                        "id"               : film_query.id,
+                        "title"            : film_query.korean_title,
+                        "countries"        : country_names,
+                        "year"             : film_query.release_date.year,
+                        "avg_rating"       : film_query.avg_rating,
+                        "poster_url"       : film_query.poster_url,
+                        "service_providers": service_provider_names
+                    }
+                    data["films"].append(body)
+                return JsonResponse(data, status = 200)
+
+        return JsonResponse(
+            {"message": "INVALID_QUERY_PARAMETER_WAY"},
             status = 400
         )
