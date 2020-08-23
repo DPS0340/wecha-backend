@@ -45,7 +45,7 @@ class SignUp(View):
         for key in data:
             if key == 'email' or key =='password' or key == 'name':
                 key_chk+=1
-        if key_chk < 2:
+        if key_chk < 3:
             return JsonResponse({"message": "KEY_ERROR"}, status=401)
         
         signup_email = data['email'] 
@@ -84,7 +84,7 @@ class SignIn(View):
         for key in data:
             if key == 'email' or key =='password' :
                 key_chk+=1
-        if key_chk < 1:
+        if key_chk < 2:
             return JsonResponse({"message": "KEY_ERROR"}, status=401)
         
         signin_email = data['email'] 
