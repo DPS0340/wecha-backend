@@ -17,13 +17,11 @@ class SignUp(View):
     def post(self, request):
         try:
             data = json.loads(request.body)
-        except JSONDecodeError:
-            return JsonResponse({"message":"JSONDecodeError"}, status=401)
-            
-        try:
             signup_email = data['email'] 
             signup_pw    = data['password']
             signup_name  = data['name']
+        except JSONDecodeError:
+            return JsonResponse({"message":"JSONDecodeError"}, status=401)
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=401)
 
@@ -56,12 +54,10 @@ class SignIn(View):
     def post(self, request):
         try:
             data = json.loads(request.body)
-        except JSONDecodeError:
-            return JsonResponse({"message":"JSONDecodeError"}, status=401)
-        
-        try:
             signin_email = data['email'] 
             signin_pw    = data['password']
+        except JSONDecodeError:
+            return JsonResponse({"message":"JSONDecodeError"}, status=401)
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
 
