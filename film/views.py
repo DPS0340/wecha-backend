@@ -207,6 +207,10 @@ class FilmRecommendationView(View):
                         "service_providers": service_provider_names
                     }
                     data["films"].append(body)
+                    data["genre"] = {
+                        "id": most_genre.pk,
+                        "name": most_genre_name
+                    }
                 return JsonResponse(data, status = 200)
 
         # 국가로 추천
@@ -236,6 +240,10 @@ class FilmRecommendationView(View):
                         "service_providers": service_provider_names
                     }
                     data["films"].append(body)
+                    data["country"] = {
+                        "id": most_country.pk,
+                        "name": most_country.name
+                    }
                 return JsonResponse(data, status = 200)
                 
         # 인물로 추천
@@ -265,6 +273,10 @@ class FilmRecommendationView(View):
                         "service_providers": service_provider_names
                     }
                     data["films"].append(body)
+                    data["person"] = {
+                        "id"  : most_person_id,
+                        "name": most_person.name
+                    }
                 return JsonResponse(data, status = 200)
 
         return JsonResponse(
