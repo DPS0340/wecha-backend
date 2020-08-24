@@ -23,41 +23,29 @@ from user.models import (
 )
 
 class FilmRankingView(View):
+    # 서비스 제공자에 따라 평균 별점이 높은 n개의 영화를 리턴한다.
     def get(self, request):
-        # 서비스 제공자에 따라 평균 별점이 높은 10개의 영화를 리턴한다.
-        sp_manager            = ServiceProvider.objects
         service_provider_name = request.GET.get('sp', None)
-        if sp_manager.filter(name = service_provider_name).exists():
-            service_provider = sp_manager.get(name = service_provider_name)
-            films            = Film.objects.filter(service_provider = service_provider) \
-                                .only(
-                                    'id',
-                                    'korean_title', 
-                                    'release_date', 
-                                    'avg_rating', 
-                                    'poster_url'
-                                ).order_by('-avg_rating')[:10]
-            
-            # 영화 10개
-            data = {
-                "films": []
-            }
-            for film in films:
-                country_names          = [c['name'] for c in film.country.values()]
-                service_provider_names = [sp['name'] for sp in film.service_provider.values()]
-
-                body = {
-                    "id"               : film.id,
-                    "title"            : film.korean_title,
-                    "countries"        : country_names,
-                    "year"             : film.release_date.year,
-                    "avg_rating"       : film.avg_rating,
-                    "poster_url"       : film.poster_url,
-                    "service_providers": service_provider_names
-                }
-                data["films"].append(body)
-            return JsonResponse(data, status = 200)
+        limit                 = request.GET.get('limit', 10)
         
+        if ServiceProvider.objects.filter(name = service_provider_name).exists():
+            service_provider = ServiceProvider.objects.get(name = service_provider_name)
+            films = service_provider.film_set.order_by('-avg_rating')[:limit]
+            
+            body = [
+                {
+                    "id"               : f.id,
+                    "title"            : f.korean_title,
+                    "year"             : f.release_date.year,
+                    "avg_rating"       : f.avg_rating,
+                    "poster_url"       : f.poster_url,
+                    "countries"        : [ c['name'] for c in f.country.values()],
+                    "service_providers": [ s['name'] for s in f.service_provider.values()]
+                }
+                for f in films
+            ]
+            return JsonResponse({"films": body}, status = 200)
+
         return JsonResponse(
             {"message": "INVALID_QUERY_PARAMETER_SERVICE_PROVIDER"},
             status = 400
