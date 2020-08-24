@@ -6,10 +6,9 @@ from json                   import JSONDecodeError
 
 from django.http            import JsonResponse
 from django.views           import View
-from django.core.exceptions import ObjectDoesNotExist
 
 from .utils                 import password_validation, token_authorization
-from .models                import  User
+from .models                import User
 from config.settings        import SECRET_KEY
 from wecha_settings         import TOKEN_ALGORITHM
 
@@ -21,20 +20,15 @@ class SignUp(View):
         except JSONDecodeError:
             return JsonResponse({"message":"JSONDecodeError"}, status=401)
             
-        key_chk = 0
-        for key in data:
-            if key == 'email' or key =='password' or key == 'name':
-                key_chk+=1
-        if key_chk < 3:
+        try:
+            signup_email = data['email'] 
+            signup_pw    = data['password']
+            signup_name  = data['name']
+        except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=401)
-        
-        signup_email = data['email'] 
-        signup_pw = data['password']
-        signup_name = data['name']
 
         # duplicate email validation
-        cnt = User.objects.filter(email=signup_email).count()
-        if cnt >= 1 : # duplicate email exists
+        if User.objects.filter(email=signup_email).exists() : # duplicate email exists
             return JsonResponse( {"message": "DUPLICATE_EMAIL_ERROR"}, status=401)
 
         #password validation
@@ -49,9 +43,9 @@ class SignUp(View):
 
         # 회원가입이 성공하면 {"message": "SUCCESS"}, status code 200을 반환합니다.
         User(
-            email = signup_email,
-            password = encrypted_pw.decode('utf-8'),
-            name = signup_name,
+            email          = signup_email,
+            password       = encrypted_pw.decode('utf-8'),
+            name           = signup_name,
             face_image_url = default_image
         ).save()
       
@@ -64,28 +58,25 @@ class SignIn(View):
             data = json.loads(request.body)
         except JSONDecodeError:
             return JsonResponse({"message":"JSONDecodeError"}, status=401)
-            
-        key_chk = 0
-        for key in data:
-            if key == 'email' or key =='password' :
-                key_chk+=1
-        if key_chk < 2:
-            return JsonResponse({"message": "KEY_ERROR"}, status=401)
         
-        signin_email = data['email'] 
-        signin_pw = data['password']
+        try:
+            signin_email = data['email'] 
+            signin_pw    = data['password']
+        except KeyError:
+            return JsonResponse({"message": "KEY_ERROR"}, status=400)
 
 
          # 계정이 존재하지 않을 때, {"message": "INVALID_USER"}, status code 401을 반환
-        try:
-            user_info = User.objects.get(email=signin_email)
-        except ObjectDoesNotExist: 
+        if not User.objects.filter(email=signin_email).exists():
             return JsonResponse(  {"message": "INVALID_USER"}, status=401)
+        else:
+            user_info = User.objects.get(email=signin_email)
         
         # 로그인이 성공하면 토큰발행, status code 200을 반환
         if  bcrypt.checkpw(signin_pw.encode('utf-8'), user_info.password.encode('utf-8')):
-            token = jwt.encode({'user_email': user_info.email}, SECRET_KEY, algorithm=TOKEN_ALGORITHM)
+            token = jwt.encode({'user_id': user_info.id}, SECRET_KEY, algorithm=TOKEN_ALGORITHM)
             token_decode = token.decode('utf-8')
-            return JsonResponse({"access_token":token_decode,"message":"REGISTER_SUCCESS"}, status = 200)
-        else: #비밀번호가 맞지 않을 때, {"message": "WRONG_PASSWORD"}, status code 401을 반환
-            return JsonResponse({"message": "WRONG_PASSWORD"}, status=401)
+            return JsonResponse({"access_token":token_decode}, status = 200)
+
+        #비밀번호가 맞지 않을 때, {"message": "WRONG_PASSWORD"}, status code 401을 반환
+        return JsonResponse({"message": "WRONG_PASSWORD"}, status=401)

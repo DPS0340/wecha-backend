@@ -1,5 +1,5 @@
 import jwt
-from functools     import wraps
+import re
 
 from django.http     import JsonResponse
 
@@ -9,32 +9,21 @@ from wecha_settings  import TOKEN_ALGORITHM
 
 
 def password_validation(password):
-    # 비밀번호 최소 6자리 이상
-    if len(password) <6 :
-        return False
 
-    # 숫자 최소 1개 포함
-    if not any([char.isdigit() for char in password]):
+    # 문자 최소 1개 포함, 숫자 최소 1개 포함, 특수문자 최소 1개 포함, 비밀번호 최소 6자리 이상
+    validation_re = re.compile(r'^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[~!@#$%^&*]).{6,}')
+    if validation_re.match(password):
+        return True
+    else:
         return False
-    
-    # 문자 최소 1개 포함
-    if not any([char.isalpha() for char in password]):
-        return False
-    
-    # 특수문자 최소 1개 포함
-    symbols = ['~','!','@','#','$','%','^','&','*','(',')','-','+','_','=']
-    if not any([char in symbols for char in password]):
-        return False
-
-    return True
 
 
 def token_authorization(func):
     def wrapper(self, request, *args, **kwargs) :
         try:
-            token = request.headers.get('Authorization', None)          
-            payload = jwt.decode(token, SECRET_KEY, algorithm=TOKEN_ALGORITHM)  
-            user_info = User.objects.get(email=payload['user_email'])                 
+            token        = request.headers.get('Authorization', None)          
+            payload      = jwt.decode(token, SECRET_KEY, algorithm=TOKEN_ALGORITHM)  
+            user_info    = User.objects.get(id=payload['user_id'])                 
             request.user = user_info # user 정보를 request에 저장하여 이후 활용
 
         except jwt.exceptions.DecodeError:                                     
