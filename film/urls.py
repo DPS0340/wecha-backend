@@ -11,9 +11,9 @@ from .views import (
 app_name = 'film'
 
 urlpatterns = [
-    path('ranking', FilmRankingView.as_view(), name="ranking"),
-    path('<int:film_id>', FilmDetailView.as_view(), name="detail"),
-    path('recommendation', FilmRecommendationView.as_view(), name="recommendation"),
-    path('collections', FilmCollectionListView.as_view(), name="collections"),
-    path('search', FilmSearchView.as_view(), name="search"),
+    path('/ranking', FilmRankingView.as_view(), name="ranking"),
+    path('/<int:film_id>', FilmDetailView.as_view(), name="detail"),
+    path('/recommendation', FilmRecommendationView.as_view(), name="recommendation"),
+    path('/collections', FilmCollectionListView.as_view(), name="collections"),
+    path('/search', FilmSearchView.as_view(), name="search"),
 ]
