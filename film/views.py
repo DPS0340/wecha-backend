@@ -124,6 +124,20 @@ class FilmDetailView(View):
                         "user_face_image_url": user.face_image_url
                     })
 
+            # TODO: 로그인한 유저인지 확인
+            # 로그인한 유저의 리뷰
+            signed_in_user = User.objects.get(pk = 101)
+            review = Review.objects.filter(film = film, user = signed_in_user).exclude(score__isnull = True)
+            signed_in_user_review = None
+            if review.exists():
+                review = review[0]
+                signed_in_user_review = {
+                    "id"                 : review.pk,
+                    "comment"            : review.comment,
+                    "user_id"            : user.id,
+                    "user_face_image_url": user.face_image_url
+                }
+
             # 각 평점의 카운트
             score_counts = Review.objects.filter(film = film)\
                         .values('score').annotate(total=Count('score'))\
@@ -131,24 +145,26 @@ class FilmDetailView(View):
 
             # 리스폰스 바디
             body = {
-                "id"                 : film.id,
-                "korean_title"       : film.korean_title,
-                "original_title"     : film.original_title,
-                "year"               : film.release_date.year,
-                "running_time_hour"  : film.running_time.hour,
-                "running_time_minute": film.running_time.minute,
-                "description"        : film.description,
-                "poster_url"         : film.poster_url,
-                "avg_rating"         : film.avg_rating,
-                "countries"          : country_names,
-                "genres"             : genre_names,
-                "service_providers"  : service_provider_names,
-                "film_urls"          : film_urls,
-                "casts"              : casts,
-                "collections"        : collections,
-                "reviews"            : reviews,
-                "review_count"       : review_count,
-                "score_counts"       : list(score_counts),
+                "id"                   : film.id,
+                "korean_title"         : film.korean_title,
+                "original_title"       : film.original_title,
+                "year"                 : film.release_date.year,
+                "running_time_hour"    : film.running_time.hour,
+                "running_time_minute"  : film.running_time.minute,
+                "description"          : film.description,
+                "poster_url"           : film.poster_url,
+                "avg_rating"           : film.avg_rating,
+                "countries"            : country_names,
+                "genres"               : genre_names,
+                "service_providers"    : service_provider_names,
+                "film_urls"            : film_urls,
+                "casts"                : casts,
+                "collections"          : collections,
+                "reviews"              : reviews,
+                "review_count"         : review_count,
+                "score_counts"         : list(score_counts),
+                "signed_in_user_review": signed_in_user_review,
+                
             }
             return JsonResponse(body, status=200)
 
