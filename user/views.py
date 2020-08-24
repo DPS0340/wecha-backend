@@ -13,26 +13,6 @@ from .models                import  User
 from config.settings        import SECRET_KEY
 from wecha_settings         import TOKEN_ALGORITHM
 
-class EmaliDuplicationCheck(View):
-    def post(self, request):
-        try:
-            data = json.loads(request.body)
-        except JSONDecodeError:
-            return JsonResponse({"message":"JSONDecodeError"}, status=401)
-            
-        for key in data:
-            if key == 'email':
-                break
-            else:
-                return JsonResponse({"message": "KEY_ERROR"}, status=401)
-        
-        email = data['email']
-
-        cnt = User.objects.filter(email=email).count()
-        if cnt == 0: # no duplication
-            return JsonResponse( {"message": "SUCCESS"}, status=200)
-        else:
-            return JsonResponse( {"message": "DUPLICATE_EMAIL_ERROR"}, status=401)
 
 class SignUp(View):
     def post(self, request):
@@ -52,7 +32,12 @@ class SignUp(View):
         signup_pw = data['password']
         signup_name = data['name']
 
-        # password validation
+        # duplicate email validation
+        cnt = User.objects.filter(email=signup_email).count()
+        if cnt >= 1 : # duplicate email exists
+            return JsonResponse( {"message": "DUPLICATE_EMAIL_ERROR"}, status=401)
+
+        #password validation
         if not password_validation(signup_pw):
             return JsonResponse({"message": "PASSWORD_VALIDATION_ERROR"}, status=401)
 
@@ -95,11 +80,12 @@ class SignIn(View):
         try:
             user_info = User.objects.get(email=signin_email)
         except ObjectDoesNotExist: 
-            return JsonResponse( {"message": "INVALID_USER"}, status=401)
+            return JsonResponse(  {"message": "INVALID_USER"}, status=401)
         
         # 로그인이 성공하면 토큰발행, status code 200을 반환
         if  bcrypt.checkpw(signin_pw.encode('utf-8'), user_info.password.encode('utf-8')):
             token = jwt.encode({'user_email': user_info.email}, SECRET_KEY, algorithm=TOKEN_ALGORITHM)
-            return JsonResponse({'access_token':token.decode('utf-8')}, status = 200)
+            token_decode = token.decode('utf-8')
+            return JsonResponse({"access_token":token_decode,"message":"REGISTER_SUCCESS"}, status = 200)
         else: #비밀번호가 맞지 않을 때, {"message": "WRONG_PASSWORD"}, status code 401을 반환
             return JsonResponse({"message": "WRONG_PASSWORD"}, status=401)
