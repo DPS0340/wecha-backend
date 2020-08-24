@@ -7,12 +7,10 @@ from config.settings import SECRET_KEY
 from user.models     import User
 from wecha_settings  import TOKEN_ALGORITHM
 
-
 def password_validation(password):
     # 문자 최소 1개 포함, 숫자 최소 1개 포함, 특수문자 최소 1개 포함, 비밀번호 최소 6자리 이상
     validation_re = re.compile(r'^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[~!@#$%^&*]).{6,}')
     return validation_re.match(password)
-
 
 def token_authorization(func):
     def wrapper(self, request, *args, **kwargs) :
@@ -30,5 +28,3 @@ def token_authorization(func):
         return func(self, request, *args, **kwargs)
 
     return wrapper 
-
-
