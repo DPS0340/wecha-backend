@@ -59,10 +59,6 @@ class SignIn(View):
             signin_pw    = data['password']
 
             # 계정이 존재하지 않을 때, {"message": "INVALID_USER"}, status code 401을 반환
-            print('email :', end=' ')
-            print(signin_email)
-            print('pw :', end=' ')
-            print(signin_pw)
             if not User.objects.filter(email=signin_email).exists():
                 return JsonResponse(  {"message": "INVALID_USER"}, status=401)
         
@@ -75,15 +71,23 @@ class SignIn(View):
                 return JsonResponse({"access_token":token_decode, "profile_url":user_info.face_image_url}, status = 200)
 
             #비밀번호가 맞지 않을 때, {"message": "WRONG_PASSWORD"}, status code 401을 반환
-            return JsonResponse({"message": "WRONG_PASSWORD"}, status=402)
+            return JsonResponse({"message": "WRONG_PASSWORD"}, status=401)
 
         except JSONDecodeError:
-            return JsonResponse({"message":"JSONDecodeError"}, status=403)
+            return JsonResponse({"message":"JSONDecodeError"}, status=401)
         except KeyError:
-            return JsonResponse({"message": "KEY_ERROR"}, status=404)
+            return JsonResponse({"message": "KEY_ERROR"}, status=401)
+
+class Profile(View):
+    @token_authorization
+    def get(self,request):
+        user_info = request.user
+        if user_info:
+            return JsonResponse({"profile_url":user_info.face_image_url}, status=200)
+        else:
+            return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
 
 class HandleReview(View):
-    
     @token_authorization
     def post(self,request): # 리뷰 등록, 수정
         try:
@@ -92,7 +96,7 @@ class HandleReview(View):
             film_info = Film.objects.get(id=film_id)
             review_text = data['review_text']
             review_rating = data['review_rating']
-            review_type = data['review_type'] # 'R' : rated, 'W' " wish", 'M' : middle
+            review_type = data['review_type'] # 'R' : rated, 'W' " wish", 'M' : middle of wathcing
             review_type_info = ReviewType.objects.get(name = review_type)
             user_info = request.user            
             if not user_info: # 유저 정보가 없는 경우
