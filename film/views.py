@@ -21,6 +21,7 @@ from user.models import (
     User,
     FilmCollection,
 )
+from user.utils import token_authorization
 
 class FilmRankingView(View):
     # 서비스 제공자에 따라 평균 별점이 높은 n개의 영화를 리턴한다.
@@ -52,109 +53,82 @@ class FilmRankingView(View):
         )
 
 class FilmDetailView(View):
-    def get(self, request, film_id):
-        film_manager = Film.objects
-        if film_manager.filter(pk = film_id).exists():
-            film = film_manager.get(pk = film_id)
+    @token_authorization
+    def get(self, request, film_id):        
+        if Film.objects.filter(pk = film_id).exists():
+            film = Film.objects.get(pk = film_id)
 
-            # 국가, 장르, 서비스 제공자
-            country_names          = [c['name'] for c in film.country.values()]
-            genre_names            = [g['name'] for g in film.genre.values()]
-            service_provider_names = [sp['name'] for sp in film.service_provider.values()]
-
-            # 영화 정보에 필요한 URLs
-            film_urls          = []
-            film_urls_queryset = FilmURL.objects.filter(film = film)
-            for query in film_urls_queryset:
-                film_urls.append({
-                    "film_url_type": query.film_url_type.name,
-                    "film_url"     : query.url
-                })
-            
-            # 캐스팅 정보
-            casts         = []
-            cast_queryset = Cast.objects.filter(film = film)
-            for query in cast_queryset:
-                person = query.person
-                casts.append({
-                    "name"    : person.name,
-                    "role"    : query.role,
-                    "face_url": person.face_image_url
-                })
-
-            # 요청 받은 영화가 포함된 컬렉션 리스트
-            collections         = []
-            collection_queryset = Collection.objects.filter(film = film)
-            for query in collection_queryset:
-                film_collection_queryset = FilmCollection.objects.filter(collection = query) \
-                                                         .select_related('film')[:4]
-                poster_urls = [q.film.poster_url for q in film_collection_queryset]
-                collections.append({
-                    "id"         : query.id,
-                    "name"       : query.name,
-                    "user_id"    : query.user.id,
-                    "poster_urls": poster_urls
-                })
-
-            # 영화에 대한 리뷰
-            reviews         = []
-            review_queryset = Review.objects.filter(film = film).exclude(score__isnull = True)
-            review_count    = len(review_queryset)
-            for query in review_queryset:
-                if User.objects.filter(id = query.user.id).exists():
-                    user = User.objects.get(id = query.user.id)
-                    reviews.append({
-                        "id"                 : query.id,
-                        "comment"            : query.comment,
-                        "like_count"         : query.like_count,
-                        "score"              : query.score,
-                        "user_id"            : user.id,
-                        "user_face_image_url": user.face_image_url
-                    })
-
-            # TODO: 로그인한 유저인지 확인
-            # 로그인한 유저의 리뷰
-            signed_in_user = User.objects.get(pk = 101)
-            review = Review.objects.filter(film = film, user = signed_in_user).exclude(score__isnull = True)
-            signed_in_user_review = None
-            if review.exists():
-                review = review[0]
-                signed_in_user_review = {
-                    "id"                 : review.pk,
-                    "comment"            : review.comment,
-                    "user_id"            : user.id,
-                    "user_face_image_url": user.face_image_url
-                }
-
-            # 각 평점의 카운트
-            score_counts = Review.objects.filter(film = film)\
-                        .values('score').annotate(total=Count('score'))\
-                        .order_by('total')
-
-            # 리스폰스 바디
             body = {
-                "id"                   : film.id,
-                "korean_title"         : film.korean_title,
-                "original_title"       : film.original_title,
-                "year"                 : film.release_date.year,
-                "running_time_hour"    : film.running_time.hour,
-                "running_time_minute"  : film.running_time.minute,
-                "description"          : film.description,
-                "poster_url"           : film.poster_url,
-                "avg_rating"           : film.avg_rating,
-                "countries"            : country_names,
-                "genres"               : genre_names,
-                "service_providers"    : service_provider_names,
-                "film_urls"            : film_urls,
-                "casts"                : casts,
-                "collections"          : collections,
-                "reviews"              : reviews,
-                "review_count"         : review_count,
-                "score_counts"         : list(score_counts),
-                "signed_in_user_review": signed_in_user_review,
-                
+                "id"                 : film.id,
+                "korean_title"       : film.korean_title,
+                "original_title"     : film.original_title,
+                "year"               : film.release_date.year,
+                "running_time_hour"  : film.running_time.hour,
+                "running_time_minute": film.running_time.minute,
+                "description"        : film.description,
+                "poster_url"         : film.poster_url,
+                "avg_rating"         : film.avg_rating,
+                "countries"          : [c['name'] for c in film.country.values()],
+                "genres"             : [g['name'] for g in film.genre.values()],
+                "service_providers"  : [sp['name'] for sp in film.service_provider.values()],
+                "film_urls"          : [
+                    {
+                        "id"           : fu.id,
+                        "film_url_type": fu.film_url_type.name,
+                        "film_url"     : fu.url
+                    }  
+                    for fu in film.filmurl_set.all().select_related('film_url_type')
+                ],
+                "casts" : [
+                    {
+                        "id"      : c.id,
+                        "name"    : c.person.name,
+                        "role"    : c.role,
+                        "face_url": c.person.face_image_url
+                    }  
+                    for c in film.cast_set.all().select_related('person')
+                ],
+                "collections" : [
+                    {
+                        "id"         : c.id,
+                        "name"       : c.name,
+                        "user_id"    : c.user.id,
+                        "poster_urls": [ f.poster_url for f in c.film.all()[:4] ]
+                    }  
+                    for c in film.collection_set.all().prefetch_related('film', 'user')
+                ],
+                "reviews" : [
+                    {
+                        "id"                 : r.id,
+                        "comment"            : r.comment,
+                        "like_count"         : r.like_count,
+                        "score"              : r.score,
+                        "user_id"            : r.user.id,
+                        "user_face_image_url": r.user.face_image_url
+                    }
+                    for r in film.review_set.all().select_related('user').exclude(score__isnull=True)
+                ],
+                "score_counts"         : [
+                    score
+                    for score in film.review_set.values('score').annotate(total=Count('score')).order_by('total')
+                ],
             }
-            return JsonResponse(body, status=200)
+            
+            # 로그인된 유저가 요청한 영화에 대한 리뷰가 있으면 body 추가해준다.
+            if request.user:
+                review = film.review_set.filter(film=film, user=request.user).exclude(score__isnull=True).select_related('user')
+                if review.exists():
+                    review = review.first()
+                    body["authenticated_user_review"] =  {
+                        "id"                 : review.id,
+                        "comment"            : review.comment,
+                        "id"                 : review.pk,
+                        "comment"            : review.comment,
+                        "user_id"            : review.user.id,
+                        "user_face_image_url": review.user.face_image_url
+                    }
+
+            return JsonResponse(body, status = 200)
 
         return JsonResponse(
             {"message": "INVALID_PATH_VARIABLE_FILM_ID"},
