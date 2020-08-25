@@ -152,114 +152,128 @@ class FilmRecommendationView(View):
                     for r in request.user.review_set.select_related('film') 
                     for g in r.film.genre.all()
                 ]).most_common(1)[0]
-                film_queryset = Genre.objects.get(name = most_genre[0]).film_set.all().prefetch_related('country', 'service_provider')[:limit]
-                
-                body = {
-                    "genre_name": most_genre[0],
-                    "films": [
-                        {
-                            "id"        : f.id,
-                            "title"     : f.korean_title,
-                            "year"      : f.release_date.year,
-                            "avg_rating": f.avg_rating,
-                            "poster_url": f.poster_url,
-                            "countries" : [
-                                {
-                                    "id"  : c['id'],
-                                    "name": c['name']
-                                }
-                                for c in f.country.values()
-                            ],
-                            "service_providers": [
-                                {
-                                    "id"  : sp['id'],
-                                    "name": sp['name']
-                                }                            
-                                for sp in f.service_provider.values()
-                            ]
-                        }
-                        for f in film_queryset
-                    ]
-                }
-                return JsonResponse(body, status=200)
-            
+                genre_name = most_genre[0]
+            else:
+                random_genre = Genre.objects.all().order_by('?').only('name').first()
+                genre_name   = random_genre.name
 
+            film_queryset = Genre.objects.get(name = genre_name).film_set.all().prefetch_related('country', 'service_provider')[:limit]
+            
+            body = {
+                "genre_name": genre_name,
+                "films": [
+                    {
+                        "id"        : f.id,
+                        "title"     : f.korean_title,
+                        "year"      : f.release_date.year,
+                        "avg_rating": f.avg_rating,
+                        "poster_url": f.poster_url,
+                        "countries" : [
+                            {
+                                "id"  : c['id'],
+                                "name": c['name']
+                            }
+                            for c in f.country.values()
+                        ],
+                        "service_providers": [
+                            {
+                                "id"  : sp['id'],
+                                "name": sp['name']
+                            }                            
+                            for sp in f.service_provider.values()
+                        ]
+                    }
+                    for f in film_queryset
+                ]
+            }
+            return JsonResponse(body, status=200)
+            
         if way == 'country':
             if request.user:
                 most_country =  Counter([
-                    g.name 
+                    c.name 
                     for r in request.user.review_set.select_related('film') 
-                    for g in r.film.country.all()
+                    for c in r.film.country.all()
                 ]).most_common(1)[0]
-                film_queryset = Country.objects.get(name = most_country[0]).film_set.all().prefetch_related('country', 'service_provider')[:limit]
+                country_name = most_country[0]
+            else:
+                random_country = Country.objects.all().order_by('?').only('name').first()
+                country_name   = random_country.name                    
+
+            film_queryset = Country.objects.get(name = country_name).film_set.all().prefetch_related('country', 'service_provider')[:limit]
                 
-                body = {
-                    "country_name": most_country[0],
-                    "films": [
-                        {
-                            "id"       : f.id,
-                            "title"    : f.korean_title,
-                            "countries": [ 
-                                {
-                                    "id"  : c['id'],
-                                    "name": c['name']
-                                }
-                                for c in f.country.values()
-                            ],
-                            "year"             : f.release_date.year,
-                            "avg_rating"       : f.avg_rating,
-                            "poster_url"       : f.poster_url,
-                            "service_providers": [
-                                {
-                                    "id"  : sp['id'],
-                                    "name": sp['name']
-                                }                            
-                                for sp in f.service_provider.values()
-                            ]
-                        }
-                        for f in film_queryset
-                    ]
-                }
-                return JsonResponse(body, status=200)
+            body = {
+                "country_name": country_name,
+                "films": [
+                    {
+                        "id"       : f.id,
+                        "title"    : f.korean_title,
+                        "countries": [ 
+                            {
+                                "id"  : c['id'],
+                                "name": c['name']
+                            }
+                            for c in f.country.values()
+                        ],
+                        "year"             : f.release_date.year,
+                        "avg_rating"       : f.avg_rating,
+                        "poster_url"       : f.poster_url,
+                        "service_providers": [
+                            {
+                                "id"  : sp['id'],
+                                "name": sp['name']
+                            }                            
+                            for sp in f.service_provider.values()
+                        ]
+                    }
+                    for f in film_queryset
+                ]
+            }
+            return JsonResponse(body, status=200)
 
         if way == 'person':
             if request.user:
                 most_person =  Counter([
-                    g.name 
+                    p.name 
                     for r in request.user.review_set.select_related('film') 
-                    for g in r.film.person.all()
+                    for p in r.film.person.all()
                 ]).most_common(1)[0]
-                film_queryset = Person.objects.get(name = most_person[0]).film_set.all().prefetch_related('country', 'service_provider')[:limit]
-                
-                body = {
-                    "person_name": most_person[0],
-                    "films": [
-                        {
-                            "id"       : f.id,
-                            "title"    : f.korean_title,
-                            "countries": [ 
-                                {
-                                    "id"  : c['id'],
-                                    "name": c['name']
-                                }
-                                for c in f.country.values()
-                            ],
-                            "year"             : f.release_date.year,
-                            "avg_rating"       : f.avg_rating,
-                            "poster_url"       : f.poster_url,
-                            "service_providers": [
-                                {
-                                    "id"  : sp['id'],
-                                    "name": sp['name']
-                                }                            
-                                for sp in f.service_provider.values()
-                            ]
-                        }
-                        for f in film_queryset
-                    ]
-                }
-                return JsonResponse(body, status=200)
+                person_name = most_person[0]
+            else:
+                random_person = Person.objects.all().order_by('?').only('name').first()
+                person_name   = random_person.name
 
+            film_queryset = Person.objects.get(name = person_name).film_set.all().prefetch_related('country', 'service_provider')[:limit]
+            
+            body = {
+                "person_name": person_name,
+                "films": [
+                    {
+                        "id"       : f.id,
+                        "title"    : f.korean_title,
+                        "countries": [ 
+                            {
+                                "id"  : c['id'],
+                                "name": c['name']
+                            }
+                            for c in f.country.values()
+                        ],
+                        "year"             : f.release_date.year,
+                        "avg_rating"       : f.avg_rating,
+                        "poster_url"       : f.poster_url,
+                        "service_providers": [
+                            {
+                                "id"  : sp['id'],
+                                "name": sp['name']
+                            }                            
+                            for sp in f.service_provider.values()
+                        ]
+                    }
+                    for f in film_queryset
+                ]
+            }
+            return JsonResponse(body, status=200)
+        
         return JsonResponse(
             {"message": "INVALID_QUERY_PARAMETER_WAY"},
             status = 400
@@ -305,4 +319,4 @@ class FilmSearchView(View):
         return JsonResponse(
             {"message": "INVALID_QUERY_PARAMETER_TERM"},
             status = 400
-        ) 
+        )
