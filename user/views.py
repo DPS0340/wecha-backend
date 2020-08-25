@@ -8,7 +8,8 @@ from django.http            import JsonResponse
 from django.views           import View
 
 from .utils                 import password_validation, token_authorization
-from .models                import User
+from film.models            import Film
+from .models                import User, Review, ReviewType
 from config.settings        import SECRET_KEY
 from wecha_settings         import TOKEN_ALGORITHM
 
@@ -43,7 +44,7 @@ class SignUp(View):
                 face_image_url = default_image
             ).save()
       
-            return JsonResponse({'message':'SUCCESS'}, status=200)
+            return JsonResponse({'message':'SIGNUP_SUCCESS'}, status=200)
 
         except JSONDecodeError:
             return JsonResponse({"message":"JSONDecodeError"}, status=401)
@@ -58,6 +59,10 @@ class SignIn(View):
             signin_pw    = data['password']
 
             # 계정이 존재하지 않을 때, {"message": "INVALID_USER"}, status code 401을 반환
+            print('email :', end=' ')
+            print(signin_email)
+            print('pw :', end=' ')
+            print(signin_pw)
             if not User.objects.filter(email=signin_email).exists():
                 return JsonResponse(  {"message": "INVALID_USER"}, status=401)
         
@@ -67,12 +72,99 @@ class SignIn(View):
             if  bcrypt.checkpw(signin_pw.encode('utf-8'), user_info.password.encode('utf-8')):
                 token = jwt.encode({'user_id': user_info.id}, SECRET_KEY, algorithm=TOKEN_ALGORITHM)
                 token_decode = token.decode('utf-8')
-                return JsonResponse({"access_token":token_decode}, status = 200)
+                return JsonResponse({"access_token":token_decode, "profile_url":user_info.face_image_url}, status = 200)
 
             #비밀번호가 맞지 않을 때, {"message": "WRONG_PASSWORD"}, status code 401을 반환
-            return JsonResponse({"message": "WRONG_PASSWORD"}, status=401)
+            return JsonResponse({"message": "WRONG_PASSWORD"}, status=402)
+
+        except JSONDecodeError:
+            return JsonResponse({"message":"JSONDecodeError"}, status=403)
+        except KeyError:
+            return JsonResponse({"message": "KEY_ERROR"}, status=404)
+
+class HandleReview(View):
+    
+    @token_authorization
+    def post(self,request): # 리뷰 등록, 수정
+        try:
+            data = json.loads(request.body)
+            film_id = data['film_id']
+            film_info = Film.objects.get(id=film_id)
+            review_text = data['review_text']
+            review_rating = data['review_rating']
+            review_type = data['review_type'] # 'R' : rated, 'W' " wish", 'M' : middle
+            review_type_info = ReviewType.objects.get(name = review_type)
+            user_info = request.user            
+            if not user_info: # 유저 정보가 없는 경우
+                return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
+
+            already_posted_review = Review.objects.filter(film = film_info).filter(user = user_info)
+     
+            if already_posted_review.exists(): # 리뷰수정
+                posted_review = already_posted_review.get()
+                posted_review.score = review_rating
+                posted_review.comment = review_text
+                posted_review.review_type = review_type_info
+                posted_review.save()
+
+            else: # 리뷰등록
+                Review(
+                    score = review_rating,
+                    comment = review_text,
+                    review_type = review_type_info,
+                    film = film_info,
+                    user = user_info
+                ).save()
+
+            # 해당 영화의 평균별점 재계산
+            review_set = Review.objects.filter(film = film_info)
+            review_set_number = review_set.count()
+            total_rating = 0
+            for review_element in review_set:
+                total_rating += review_element.score
+            film_info.avg_rating = total_rating / review_set_number
+            film_info.save()
+
+            return JsonResponse({"message":"POST_REVIEW_SUCCESS"}, status=200)
+
+        except JSONDecodeError:
+            return JsonResponse({"message":"JSONDecodeError"}, status=400)
+        except KeyError:
+            return JsonResponse({"message": "KEY_ERROR"}, status=400)
+        except Review.DoesNotExist:
+            return JsonResponse({"message":"NOT_EXISTS_REVIEW"}, status=400)
+
+
+    @token_authorization
+    def delete(self,request): # 리뷰 삭제
+        try:
+            data = json.loads(request.body)
+            film_id = data['film_id']
+            film_info = Film.objects.get(id=film_id)
+            user_info = request.user            
+            if not user_info: # 유저 정보가 없는 경우
+                return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
+
+            Review.objects.get(film = film_info, user = user_info).delete()
+            
+            # 해당 영화의 평균별점 재계산
+            review_set = Review.objects.filter(film = film_info)
+            review_set_number = review_set.count()
+            total_rating = 0
+            for review_element in review_set:
+                total_rating += review_element.score
+            
+            if review_set_number == 0:
+                film_info.avg_rating = 0
+            else:
+                film_info.avg_rating = total_rating / review_set_number
+            film_info.save()        
+
+            return JsonResponse({"message": "DELETE_REVIEW_SUCCESS"}, status=200)
 
         except JSONDecodeError:
             return JsonResponse({"message":"JSONDecodeError"}, status=401)
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
+        except Review.DoesNotExist:
+            return JsonResponse({"message":"NOT_EXISTS_REVIEW"}, status=401)

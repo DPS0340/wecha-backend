@@ -22,9 +22,9 @@ def token_authorization(func):
 
         except jwt.exceptions.DecodeError:                                     
             return JsonResponse({'message' : 'INVALID_TOKEN' }, status=400)
-
         except User.DoesNotExist:                                           
-            return JsonResponse({'message' : 'INVALID_USER'}, status=400)
+            request.user = None
+
         return func(self, request, *args, **kwargs)
 
     return wrapper 
