@@ -102,6 +102,7 @@ class FilmDetailView(View):
                 "reviews" : [
                     {
                         "id"                 : r.id,
+                        "review_type"        : r.review_type.name,
                         "comment"            : r.comment,
                         "like_count"         : r.like_count,
                         "score"              : r.score,
@@ -118,11 +119,12 @@ class FilmDetailView(View):
             
             # 로그인된 유저가 요청한 영화에 대한 리뷰가 있으면 body 추가해준다.
             if request.user:
-                review = film.review_set.filter(film=film, user=request.user).exclude(score__isnull=True).select_related('user')
+                review = film.review_set.filter(film=film, user=request.user).exclude(score__isnull=True).select_related('user', 'review_type')
                 if review.exists():
                     review = review.first()
                     body["authenticated_user_review"] = {
                         "id"                 : review.id,
+                        "review_type"        : review.review_type.name,
                         "comment"            : review.comment,
                         "id"                 : review.pk,
                         "comment"            : review.comment,
