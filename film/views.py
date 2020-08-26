@@ -24,10 +24,9 @@ from user.models import (
 from user.utils import token_authorization
 
 class FilmRankingView(View):
-    # 서비스 제공자에 따라 평균 별점이 높은 n개의 영화를 리턴한다.
     def get(self, request):
         service_provider_name = request.GET.get('sp', None)
-        limit                 = request.GET.get('limit', 10)
+        limit                 = int(request.GET.get('limit', 10))
         
         if ServiceProvider.objects.filter(name = service_provider_name).exists():
             service_provider = ServiceProvider.objects.get(name = service_provider_name)
@@ -143,7 +142,7 @@ class FilmRecommendationView(View):
     @token_authorization
     def get(self, request):
         way   = request.GET.get('way', None)
-        limit = request.GET.get('limit', 18)
+        limit = int(request.GET.get('limit', 18))
 
         if way == 'genre':
             if request.user:
@@ -281,7 +280,7 @@ class FilmRecommendationView(View):
 
 class FilmCollectionListView(View):
     def get(self, request):
-        limit       = request.GET.get('limit', 18)
+        limit       = int(request.GET.get('limit', 18))
         collections = Collection.objects.all().prefetch_related('film').order_by('?')[:limit]
         
         body = {
@@ -302,8 +301,8 @@ class FilmCollectionListView(View):
 class FilmCollectionDetailView(View):
     def get(self, request, collection_id):
         if Collection.objects.filter(id=collection_id).exists():
-            page  = request.GET.get('page', 1)
-            limit = request.GET.get('limit', 12)
+            page  = int(request.GET.get('page', 1))
+            limit = int(request.GET.get('limit', 12))
 
             collection = Collection.objects.get(id=collection_id)
             
@@ -334,7 +333,7 @@ class FilmCollectionDetailView(View):
 class FilmSearchView(View):
     def get(self, request):
         term  = request.GET.get('term', None)
-        limit = request.GET.get('limit', 9)
+        limit = int(request.GET.get('limit', 9))
 
         if term:
             body = {
