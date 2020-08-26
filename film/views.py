@@ -22,6 +22,7 @@ from user.models import (
     FilmCollection,
 )
 from user.utils  import token_authorization
+from .make_jsons import *
 
 class FilmRankingView(View):
     def get(self, request):
@@ -30,21 +31,9 @@ class FilmRankingView(View):
         
         if ServiceProvider.objects.filter(name = service_provider_name).exists():
             service_provider = ServiceProvider.objects.get(name = service_provider_name)
-            films = service_provider.film_set.order_by('-avg_rating')[:limit]
-            body = {
-                "films": [
-                    {
-                        "id"               : f.id,
-                        "title"            : f.korean_title,
-                        "year"             : f.release_date.year,
-                        "avg_rating"       : f.avg_rating,
-                        "poster_url"       : f.poster_url,
-                        "countries"        : [ c['name'] for c in f.country.values()],
-                        "service_providers": [ s['name'] for s in f.service_provider.values()]
-                    }
-                    for f in films
-                ]
-            }
+            films            = service_provider.film_set.order_by('-avg_rating')[:limit]
+            
+            body = { "films": [make_film_list_json(film)for film in films] }
             return JsonResponse(body, status = 200)
 
         return JsonResponse(
@@ -59,80 +48,19 @@ class FilmDetailView(View):
             film = Film.objects.get(pk = film_id)
 
             body = {
-                "id"                 : film.id,
-                "korean_title"       : film.korean_title,
-                "original_title"     : film.original_title,
-                "year"               : film.release_date.year,
-                "running_time_hour"  : film.running_time.hour,
-                "running_time_minute": film.running_time.minute,
-                "description"        : film.description,
-                "poster_url"         : film.poster_url,
-                "avg_rating"         : film.avg_rating,
-                "countries"          : [c['name'] for c in film.country.values()],
-                "genres"             : [g['name'] for g in film.genre.values()],
-                "service_providers"  : [sp['name'] for sp in film.service_provider.values()],
-                "film_urls"          : [
-                    {
-                        "id"           : fu.id,
-                        "film_url_type": fu.film_url_type.name,
-                        "film_url"     : fu.url
-                    }  
-                    for fu in film.filmurl_set.all().select_related('film_url_type')
-                ],
-                "casts" : [
-                    {
-                        "id"      : c.id,
-                        "name"    : c.person.name,
-                        "role"    : c.role,
-                        "face_url": c.person.face_image_url
-                    }  
-                    for c in film.cast_set.all().select_related('person')
-                ],
-                "collections" : [
-                    {
-                        "id"         : c.id,
-                        "name"       : c.name,
-                        "user_id"    : c.user.id,
-                        "poster_urls": [ f.poster_url for f in c.film.all()[:4] ]
-                    }  
-                    for c in film.collection_set.all().prefetch_related('film', 'user')
-                ],
-                "reviews" : [
-                    {
-                        "id"                 : r.id,
-                        "review_type"        : r.review_type.name,
-                        "comment"            : r.comment,
-                        "like_count"         : r.like_count,
-                        "score"              : r.score,
-                        "user"               : {
-                            "id"            : review.user.id,
-                            "name"          : review.user.name,
-                            "face_image_url": review.user.face_image_url
-                        }
-                    }
-                    for r in film.review_set.all().select_related('user').exclude(score__isnull=True)
-                ],
-                "score_counts" : [
-                    score
-                    for score in film.review_set.values('score').annotate(total=Count('score')).order_by('total')
-                ],
+                "film"        : make_film_for_detail_json(film),
+                "urls"        : make_film_urls_json(film.filmurl_set.all().select_related('film_url_type')),
+                "casts"       : make_casts_json(film.cast_set.all().select_related('person')),
+                "collections" : make_collections_json(film.collection_set.all().prefetch_related('film', 'user')),
+                "reviews"     : make_reviews_json(film.review_set.all().select_related('user').exclude(score__isnull=True)),
+                "score_counts": make_score_counts_json(film.review_set.values('score').annotate(total=Count('score')).order_by('total')),
             }
             
-           # 로그인된 유저가 요청한 영화에 대한 리뷰가 있으면 body 추가해준다.
             if request.user:
                 review = film.review_set.filter(film=film, user=request.user).exclude(score__isnull=True).select_related('user', 'review_type')
                 if review.exists():
                     review = review.first()
-                    body["authenticated_user_review"] = {
-                        "id"                 : review.id,
-                        "review_type"        : review.review_type.name,
-                        "comment"            : review.comment,
-                        "user"               : {
-                            "id"            : review.user.id,
-                            "name"          : review.user.name,
-                            "face_image_url": review.user.face_image_url
-                        }
-                    }
+                    body["authenticated_user_review"] = make_review_json(review)
 
             return JsonResponse(body, status = 200)
 
@@ -173,31 +101,8 @@ class FilmRecommendationView(View):
             .prefetch_related('country', 'service_provider')[:limit]
 
         body = {
-            way: name,
-            "films": [
-                {
-                    "id"        : f.id,
-                    "title"     : f.korean_title,
-                    "year"      : f.release_date.year,
-                    "avg_rating": f.avg_rating,
-                    "poster_url": f.poster_url,
-                    "countries" : [
-                        {
-                            "id"  : c['id'],
-                            "name": c['name']
-                        }
-                        for c in f.country.values()
-                    ],
-                    "service_providers": [
-                        {
-                            "id"  : sp['id'],
-                            "name": sp['name']
-                        }                            
-                        for sp in f.service_provider.values()
-                    ]
-                }
-                for f in films
-            ]
+            way    : name,
+            "films": make_films_for_list_json(films)
         }
         return body
 
@@ -218,46 +123,21 @@ class FilmCollectionListView(View):
     def get(self, request):
         limit       = int(request.GET.get('limit', 18))
         collections = Collection.objects.all().prefetch_related('film').order_by('?')[:limit]
-        
-        body = {
-            "collections": [
-                {
-                    "id"        : c.id,
-                    "name"      : c.name,
-                    "poster_urls": [
-                        f.poster_url
-                        for f in c.film.all()[:4]
-                    ] 
-                }
-                for c in collections
-            ]
-        }
+
+        body = { "collections": make_collections_for_list_json(collections) }
         return JsonResponse(body, status = 200)
 
 class FilmCollectionDetailView(View):
     def get(self, request, collection_id):
         if Collection.objects.filter(id=collection_id).exists():
-            page  = int(request.GET.get('page', 1))
+            offset  = int(request.GET.get('offset', 0))
             limit = int(request.GET.get('limit', 12))
 
             collection = Collection.objects.get(id=collection_id)
             
             body = {
-                "id": collection.id,
-                "name": collection.name,
-                "description": collection.description,
-                "films": [
-                    {
-                        "id": f.id,
-                        "korean_title": f.korean_title,
-                        "poster_url": f.poster_url,
-                        "service_provider": [
-                            sp.name
-                            for sp in f.service_provider.all()
-                        ]
-                    }
-                    for f in collection.film.all()[(limit * (page-1)): limit]
-                ]
+                "collection": make_collection_for_list_json(collection),
+                "films"     : make_films_for_list_json(collection.film.all()[offset: limit])
             }
             return JsonResponse(body, status = 200)
 
@@ -272,15 +152,7 @@ class FilmSearchView(View):
         limit = int(request.GET.get('limit', 9))
 
         if term:
-            body = {"results": 
-                [
-                    {
-                        "id"          : f.id,
-                        "korean_title": f.korean_title
-                    }
-                    for f in Film.objects.filter(korean_title__icontains = term)[:limit]
-                ]
-            }
+            body = { "search_results": make_film_search_results_json(Film.objects.filter(korean_title__icontains = term)[:limit]) }
             return JsonResponse(body, status = 200)
 
         return JsonResponse(
