@@ -299,6 +299,38 @@ class FilmCollectionListView(View):
         }
         return JsonResponse(body, status = 200)
 
+class FilmCollectionDetailView(View):
+    def get(self, request, collection_id):
+        if Collection.objects.filter(id=collection_id).exists():
+            page  = request.GET.get('page', 1)
+            limit = request.GET.get('limit', 12)
+
+            collection = Collection.objects.get(id=collection_id)
+            
+            body = {
+                "id": collection.id,
+                "name": collection.name,
+                "description": collection.description,
+                "films": [
+                    {
+                        "id": f.id,
+                        "korean_title": f.korean_title,
+                        "poster_url": f.poster_url,
+                        "service_provider": [
+                            sp.name
+                            for sp in f.service_provider.all()
+                        ]
+                    }
+                    for f in collection.film.all()[(limit * (page-1)): limit]
+                ]
+            }
+            return JsonResponse(body, status = 200)
+
+        return JsonResponse(
+            {"message": "INVALID_PATH_PARAMETER_COLLECTION_ID"},
+             status = 400
+        )
+
 class FilmSearchView(View):
     def get(self, request):
         term  = request.GET.get('term', None)
