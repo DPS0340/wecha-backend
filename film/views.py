@@ -4,7 +4,7 @@ from django.views     import View
 from django.http      import JsonResponse
 from django.db.models import Count
 
-from .models import (
+from .models     import (
     Film,
     Country,
     ServiceProvider,
@@ -21,7 +21,7 @@ from user.models import (
     User,
     FilmCollection,
 )
-from user.utils import token_authorization
+from user.utils  import token_authorization
 
 class FilmRankingView(View):
     def get(self, request):
@@ -104,8 +104,11 @@ class FilmDetailView(View):
                         "comment"            : r.comment,
                         "like_count"         : r.like_count,
                         "score"              : r.score,
-                        "user_id"            : r.user.id,
-                        "user_face_image_url": r.user.face_image_url
+                        "user"               : {
+                            "id"            : review.user.id,
+                            "name"          : review.user.name,
+                            "face_image_url": review.user.face_image_url
+                        }
                     }
                     for r in film.review_set.all().select_related('user').exclude(score__isnull=True)
                 ],
@@ -115,7 +118,7 @@ class FilmDetailView(View):
                 ],
             }
             
-            # 로그인된 유저가 요청한 영화에 대한 리뷰가 있으면 body 추가해준다.
+           # 로그인된 유저가 요청한 영화에 대한 리뷰가 있으면 body 추가해준다.
             if request.user:
                 review = film.review_set.filter(film=film, user=request.user).exclude(score__isnull=True).select_related('user', 'review_type')
                 if review.exists():
@@ -124,10 +127,11 @@ class FilmDetailView(View):
                         "id"                 : review.id,
                         "review_type"        : review.review_type.name,
                         "comment"            : review.comment,
-                        "id"                 : review.pk,
-                        "comment"            : review.comment,
-                        "user_id"            : review.user.id,
-                        "user_face_image_url": review.user.face_image_url
+                        "user"               : {
+                            "id"            : review.user.id,
+                            "name"          : review.user.name,
+                            "face_image_url": review.user.face_image_url
+                        }
                     }
 
             return JsonResponse(body, status = 200)
@@ -268,8 +272,8 @@ class FilmSearchView(View):
         limit = int(request.GET.get('limit', 9))
 
         if term:
-            body = {
-                "results": [
+            body = {"results": 
+                [
                     {
                         "id"          : f.id,
                         "korean_title": f.korean_title
