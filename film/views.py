@@ -130,8 +130,8 @@ class FilmCollectionListView(View):
 class FilmCollectionDetailView(View):
     def get(self, request, collection_id):
         if Collection.objects.filter(id=collection_id).exists():
-            offset  = int(request.GET.get('offset', 0))
-            limit = int(request.GET.get('limit', 12))
+            offset = int(request.GET.get('offset', 0))
+            limit  = int(request.GET.get('limit', 12))
 
             collection = Collection.objects.get(id=collection_id)
             
