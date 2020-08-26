@@ -33,7 +33,7 @@ class FilmRankingView(View):
             service_provider = ServiceProvider.objects.get(name = service_provider_name)
             films            = service_provider.film_set.order_by('-avg_rating')[:limit]
             
-            body = { "films": [make_film_list_json(film)for film in films] }
+            body = { "films": make_films_for_list_json(films) }
             return JsonResponse(body, status = 200)
 
         return JsonResponse(
@@ -51,7 +51,7 @@ class FilmDetailView(View):
                 "film"        : make_film_for_detail_json(film),
                 "urls"        : make_film_urls_json(film.filmurl_set.all().select_related('film_url_type')),
                 "casts"       : make_casts_json(film.cast_set.all().select_related('person')),
-                "collections" : make_collections_json(film.collection_set.all().prefetch_related('film', 'user')),
+                "collections" : make_collections_for_list_json(film.collection_set.all().prefetch_related('film', 'user')),
                 "reviews"     : make_reviews_json(film.review_set.all().select_related('user').exclude(score__isnull=True)),
                 "score_counts": make_score_counts_json(film.review_set.values('score').annotate(total=Count('score')).order_by('total')),
             }
@@ -71,20 +71,20 @@ class FilmDetailView(View):
 
 class FilmRecommendationView(View):
     def get_queryset_by_way(self, way, review):
-        if way == "genre":
-            return review.film.genre.all()
-        if way == "country":
-            return review.film.country.all()
-        if way == "person":
-            return review.film.person.all()
+        way_to_queryset = {
+            "genre"  : review.film.genre.all(),
+            "country": review.film.country.all(),
+            "person" : review.film.person.all()
+        }
+        return way_to_queryset[way]
 
     def get_model_by_way(self, way):
-        if way == "genre":
-            return Genre
-        if way == "country":
-            return Country
-        if way == "person":
-            return Person
+        way_to_model = {
+            "genre"  : Genre,
+            "country": Country,
+            "person" : Person,
+        }
+        return way_to_model[way]
 
     def get_recommendation_by_way(self, user, way, limit):
         if user:
