@@ -49,7 +49,7 @@ class FilmRankingView(View):
 
         return JsonResponse(
             {"message": "INVALID_QUERY_PARAMETER_SERVICE_PROVIDER"},
-            status = 400
+            status = 404
         )
 
 class FilmDetailView(View):
@@ -138,7 +138,7 @@ class FilmDetailView(View):
 
         return JsonResponse(
             {"message": "INVALID_PATH_VARIABLE_FILM_ID"},
-            status = 400
+            status = 404
         )
 
 class FilmRecommendationView(View):
@@ -209,7 +209,7 @@ class FilmRecommendationView(View):
         if way != "genre" and way != "country" and way != "person":
             return JsonResponse(
                 {"message": "INVALID_QUERY_PARAMETER_WAY"},
-                status = 400
+                status = 404
             )
         body = self.get_recommendation_by_way(request.user, way, limit)
         return JsonResponse(body, status = 200)
@@ -263,7 +263,7 @@ class FilmCollectionDetailView(View):
 
         return JsonResponse(
             {"message": "INVALID_PATH_PARAMETER_COLLECTION_ID"},
-             status = 400
+             status = 404
         )
 
 class FilmSearchView(View):
@@ -285,5 +285,5 @@ class FilmSearchView(View):
 
         return JsonResponse(
             {"message": "INVALID_QUERY_PARAMETER_TERM"},
-            status = 400
+            status = 404
         )
