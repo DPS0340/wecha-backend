@@ -78,15 +78,6 @@ class SignIn(View):
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=401)
 
-class Profile(View):
-    @token_authorization
-    def get(self,request):
-        user_info = request.user
-        if user_info:
-            return JsonResponse({"profile_url":user_info.face_image_url}, status=200)
-        else:
-            return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
-
 class HandleReview(View):
     @token_authorization
     def post(self,request): # 리뷰 등록, 수정
@@ -172,3 +163,8 @@ class HandleReview(View):
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
         except Review.DoesNotExist:
             return JsonResponse({"message":"NOT_EXISTS_REVIEW"}, status=401)
+
+class ReviewCount(View):
+    def get(self, request):
+        review_count = Review.objects.all().count()
+        return JsonResponse({"review_count":review_count}, status=200)
