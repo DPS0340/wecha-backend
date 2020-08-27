@@ -22,7 +22,29 @@ from user.models import (
     FilmCollection,
 )
 from user.utils  import token_authorization
-from .make_jsons import *
+from .make_jsons import (
+    make_service_provider_json,
+    make_service_providers_json,
+    make_country_json,
+    make_countries_json,
+    make_genre_json,
+    make_genres_json,
+    make_film_for_list_json,
+    make_films_for_list_json,
+    make_film_for_detail_json,
+    make_film_url_json,
+    make_film_urls_json,
+    make_cast_json,
+    make_casts_json,
+    make_user_json,
+    make_collection_for_list_json,
+    make_collections_for_list_json,
+    make_review_json,
+    make_reviews_json,
+    make_score_counts_json,
+    make_film_search_result_json,
+    make_film_search_results_json
+)
 
 class FilmRankingView(View):
     def get(self, request):
@@ -86,16 +108,23 @@ class FilmRecommendationView(View):
         }
         return way_to_model[way]
 
+    def get_random_name(self, way):
+        return self.get_model_by_way(way).objects.all()\
+                .order_by('?').only('name').first().name
+
     def get_recommendation_by_way(self, user, way, limit):
         if user:
-            name = Counter([
-                obj.name
-                for review in user.review_set.select_related('film')
-                for obj in self.get_queryset_by_way(way, review)
-            ]).most_common(1)[0][0]
+            reviews = user.review_set.select_related('film')
+            if reviews:
+                name = Counter([
+                    obj.name
+                    for review in reviews
+                    for obj in self.get_queryset_by_way(way, review)
+                ]).most_common(1)[0][0]
+            else:
+                name = self.get_random_name(way)
         else:
-            name = self.get_model_by_way(way).objects.all().order_by('?')\
-                .only('name').first().name
+            name = self.get_random_name(way)
         
         films = self.get_model_by_way(way).objects.get(name = name).film_set.all()\
             .prefetch_related('country', 'service_provider')[:limit]
