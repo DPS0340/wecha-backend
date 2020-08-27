@@ -103,8 +103,6 @@ class FilmRecommendationView(View):
                 name = self.get_random_name(way)
         else:
             name = self.get_random_name(way)
-            # name = self.get_model_by_way(way).objects.all().order_by('?')\
-            #     .only('name').first().name
         
         films = self.get_model_by_way(way).objects.get(name = name).film_set.all()\
             .prefetch_related('country', 'service_provider')[:limit]
