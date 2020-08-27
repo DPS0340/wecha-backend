@@ -34,7 +34,7 @@ class SignUp(View):
             encrypted_pw = bcrypt.hashpw(signup_pw.encode('utf-8'), bcrypt.gensalt())
 
             # 기본 유저 프로필 사진
-            default_image = 'https://d3sz5r0rl9fxuc.cloudfront.net/assets/default/user/photo_file_name_small-bc8b334acec6a4e386249dedf9e763b5e6aff523fa85cc29211f22e6bed540df.jpg'
+            default_image = 'https://ca.slack-edge.com/TH0U6FBTN-U014K5JLSQP-3fa65eb31d7f-512'
 
             # 회원가입이 성공하면 {"message": "SUCCESS"}, status code 200을 반환합니다.
             User(
@@ -192,3 +192,29 @@ class ReviewLike(View):
             return JsonResponse({"message":"JSONDecodeError"}, status=401)
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
+        except Review.DoesNotExist:
+            return JsonResponse({"message":"NOT_EXISTS_REVIEW"}, status=401)
+
+class UserInfo(View):
+    @token_authorization
+    def get(self, request):
+        user_name = request.user.name
+        user_profile = request.user.face_image_url
+        user_review_films = []
+
+        reviewed_films = Review.objects.filter(user = request.user).select_related('film')[0:10]
+        
+        for reviewed_film in reviewed_films:
+            reviewed_film_info = []
+            reviewed_film_info.append(reviewed_film.film.korean_title)
+            reviewed_film_info.append(reviewed_film.film.avg_rating)
+            reviewed_film_info.append(reviewed_film.film.poster_url)
+            user_review_films.append(reviewed_film_info)
+
+        user_info = {
+            "user_name":user_name,
+            "user_profile": user_profile,
+            "user_review_films":user_review_films
+        }
+
+        return JsonResponse(user_info, status=200)

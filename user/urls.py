@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SignUp, SignIn, HandleReview, ReviewCount, ReviewLike
+from .views import SignUp, SignIn, HandleReview, ReviewCount, ReviewLike, UserInfo
 
 app_name='user'
 
@@ -9,4 +9,5 @@ urlpatterns = [
     path('/review', HandleReview.as_view()),
     path('/review/count', ReviewCount.as_view()),
     path('/review/like', ReviewLike.as_view()),
+    path('/info', UserInfo.as_view()),
 ]
