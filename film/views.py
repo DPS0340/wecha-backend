@@ -22,7 +22,29 @@ from user.models import (
     FilmCollection,
 )
 from user.utils  import token_authorization
-from .make_jsons import *
+from .make_jsons import (
+    make_service_provider_json,
+    make_service_providers_json,
+    make_country_json,
+    make_countries_json,
+    make_genre_json,
+    make_genres_json,
+    make_film_for_list_json,
+    make_films_for_list_json,
+    make_film_for_detail_json,
+    make_film_url_json,
+    make_film_urls_json,
+    make_cast_json,
+    make_casts_json,
+    make_user_json,
+    make_collection_for_list_json,
+    make_collections_for_list_json,
+    make_review_json,
+    make_reviews_json,
+    make_score_counts_json,
+    make_film_search_result_json,
+    make_film_search_results_json
+)
 
 class FilmRankingView(View):
     def get(self, request):
