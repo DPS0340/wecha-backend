@@ -18,8 +18,7 @@ from user.models import (
     Collection,
     FilmCollection,
     ReviewType,
-    Review,
-    
+    Review   
 )
 
 
