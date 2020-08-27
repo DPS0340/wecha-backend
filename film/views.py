@@ -86,16 +86,25 @@ class FilmRecommendationView(View):
         }
         return way_to_model[way]
 
+    def get_random_name(self, way):
+        return self.get_model_by_way(way).objects.all()\
+                .order_by('?').only('name').first().name
+
     def get_recommendation_by_way(self, user, way, limit):
         if user:
-            name = Counter([
-                obj.name
-                for review in user.review_set.select_related('film')
-                for obj in self.get_queryset_by_way(way, review)
-            ]).most_common(1)[0][0]
+            reviews = user.review_set.select_related('film')
+            if reviews:
+                name = Counter([
+                    obj.name
+                    for review in reviews
+                    for obj in self.get_queryset_by_way(way, review)
+                ]).most_common(1)[0][0]
+            else:
+                name = self.get_random_name(way)
         else:
-            name = self.get_model_by_way(way).objects.all().order_by('?')\
-                .only('name').first().name
+            name = self.get_random_name(way)
+            # name = self.get_model_by_way(way).objects.all().order_by('?')\
+            #     .only('name').first().name
         
         films = self.get_model_by_way(way).objects.get(name = name).film_set.all()\
             .prefetch_related('country', 'service_provider')[:limit]
