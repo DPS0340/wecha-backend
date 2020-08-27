@@ -124,6 +124,8 @@ class HandleReview(View):
             return JsonResponse({"message":"JSONDecodeError"}, status=400)
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
+        except Film.DoesNotExist:
+            return JsonResponse({"message":"NOT_EXISTS_FILM"}, status=400)
         except Review.DoesNotExist:
             return JsonResponse({"message":"NOT_EXISTS_REVIEW"}, status=400)
 
@@ -153,6 +155,8 @@ class HandleReview(View):
             return JsonResponse({"message":"JSONDecodeError"}, status=401)
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
+        except Film.DoesNotExist:
+            return JsonResponse({"message":"NOT_EXISTS_FILM"}, status=400)
         except Review.DoesNotExist:
             return JsonResponse({"message":"NOT_EXISTS_REVIEW"}, status=401)
 
@@ -193,12 +197,12 @@ class UserInfo(View):
         user_info = request.user            
         if not user_info: # 유저 정보가 없는 경우
             return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
-
         user_name    = user_info.name
         user_profile = user_info.face_image_url
+        MAXIMUM_NUMBER_REVIEWS = 10
     
         # 유저가 평가한 영화들
-        reviewed_films = Review.objects.filter(user = user_info).select_related('film')[0:10]
+        reviewed_films = Review.objects.filter(user = user_info).select_related('film')[0:MAXIMUM_NUMBER_REVIEWS]
 
         user_review_films = [
             {   "title"      : reviewed_film.film.korean_title,
