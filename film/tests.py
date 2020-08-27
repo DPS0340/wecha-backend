@@ -1,7 +1,26 @@
 from django.test import TestCase, Client
 
-from .models     import *
-from user.models import *
+from .models     import (
+    Country,
+    FilmCountry,
+    Genre,
+    FilmGenre,
+    ServiceProvider,
+    FilmServiceProvider,
+    Film,
+    FilmURLType,
+    FilmURL,
+    Person,
+    Cast
+)
+from user.models import (
+    User,
+    Collection,
+    FilmCollection,
+    ReviewType,
+    Review,
+    
+)
 
 
 class FilmTest(TestCase):
