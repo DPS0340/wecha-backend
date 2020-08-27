@@ -17,7 +17,7 @@ def token_authorization(func):
         try:
             token        = request.headers.get('Authorization', None)          
             payload      = jwt.decode(token, SECRET_KEY, algorithm=TOKEN_ALGORITHM)  
-            user_info    = User.objects.get(id=payload['user_id'])                 
+            user_info    = User.objects.get(id=payload['user_id'])
             request.user = user_info # user 정보를 request에 저장하여 이후 활용
 
         except jwt.exceptions.DecodeError:                                     
