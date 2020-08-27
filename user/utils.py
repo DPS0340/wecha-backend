@@ -22,7 +22,7 @@ def token_authorization(func):
 
         except jwt.exceptions.DecodeError: #토큰이 없거나 토큰 형태가 유효하지 않는 경우                                    
             request.user = None
-        except User.DoesNotExist:   
+        except User.DoesNotExist:          # 해당 토큰에 대한 유저정보가 없는 경우
             request.user = None
 
         return func(self, request, *args, **kwargs)

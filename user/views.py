@@ -36,7 +36,7 @@ class SignUp(View):
             encrypted_pw = bcrypt.hashpw(signup_pw.encode('utf-8'), bcrypt.gensalt())
 
             # 기본 유저 프로필 사진
-            default_image = 'https://d3sz5r0rl9fxuc.cloudfront.net/assets/default/user/photo_file_name_small-bc8b334acec6a4e386249dedf9e763b5e6aff523fa85cc29211f22e6bed540df.jpg'
+            default_image = 'https://ca.slack-edge.com/TH0U6FBTN-U014K5JLSQP-3fa65eb31d7f-512'
 
             # 회원가입이 성공하면 {"message": "SUCCESS"}, status code 200을 반환합니다.
             User(
@@ -124,6 +124,8 @@ class HandleReview(View):
             return JsonResponse({"message":"JSONDecodeError"}, status=400)
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
+        except Film.DoesNotExist:
+            return JsonResponse({"message":"NOT_EXISTS_FILM"}, status=400)
         except Review.DoesNotExist:
             return JsonResponse({"message":"NOT_EXISTS_REVIEW"}, status=400)
 
@@ -153,6 +155,8 @@ class HandleReview(View):
             return JsonResponse({"message":"JSONDecodeError"}, status=401)
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
+        except Film.DoesNotExist:
+            return JsonResponse({"message":"NOT_EXISTS_FILM"}, status=400)
         except Review.DoesNotExist:
             return JsonResponse({"message":"NOT_EXISTS_REVIEW"}, status=401)
 
@@ -168,6 +172,10 @@ class ReviewLike(View):
             data         = json.loads(request.body)
             comment_id   = data['comment_id']
             comment_like = data['like_count']
+            user_info = request.user            
+
+            if not user_info: # 유저 정보가 없는 경우
+                return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
 
             comment            = Review.objects.get(id = comment_id)
             comment.like_count = comment_like
@@ -179,3 +187,34 @@ class ReviewLike(View):
             return JsonResponse({"message":"JSONDecodeError"}, status=401)
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
+        except Review.DoesNotExist:
+            return JsonResponse({"message":"NOT_EXISTS_REVIEW"}, status=401)
+
+class UserInfo(View):
+    @token_authorization
+    def get(self, request):
+
+        user_info = request.user            
+        if not user_info: # 유저 정보가 없는 경우
+            return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
+        user_name    = user_info.name
+        user_profile = user_info.face_image_url
+        MAXIMUM_NUMBER_REVIEWS = 10
+    
+        # 유저가 평가한 영화들
+        reviewed_films = Review.objects.filter(user = user_info).select_related('film')[0:MAXIMUM_NUMBER_REVIEWS]
+
+        user_review_films = [
+            {   "title"      : reviewed_film.film.korean_title,
+                "rating"     : reviewed_film.score,
+                "poster_url" : reviewed_film.film.poster_url
+            } for reviewed_film in reviewed_films
+        ]
+
+        response = {
+            "user_name"         : user_name,
+            "user_profile"      : user_profile,
+            "user_review_films" : user_review_films
+        }
+
+        return JsonResponse(response, status=200)
