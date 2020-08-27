@@ -168,6 +168,10 @@ class ReviewLike(View):
             data         = json.loads(request.body)
             comment_id   = data['comment_id']
             comment_like = data['like_count']
+            user_info = request.user            
+
+            if not user_info: # 유저 정보가 없는 경우
+                return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
 
             comment            = Review.objects.get(id = comment_id)
             comment.like_count = comment_like
@@ -185,10 +189,16 @@ class ReviewLike(View):
 class UserInfo(View):
     @token_authorization
     def get(self, request):
-        user_name = request.user.name
+        user_info = request.user            
+
+        if not user_info: # 유저 정보가 없는 경우
+            return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
+
+        user_name = user_info.name
         user_profile = request.user.face_image_url
         user_review_films = []
 
+        # 유저가 평가한 영화들
         reviewed_films = Review.objects.filter(user = request.user).select_related('film')[0:10]
         
         for reviewed_film in reviewed_films:
