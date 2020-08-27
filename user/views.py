@@ -189,29 +189,28 @@ class ReviewLike(View):
 class UserInfo(View):
     @token_authorization
     def get(self, request):
-        user_info = request.user            
 
+        user_info = request.user            
         if not user_info: # 유저 정보가 없는 경우
             return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
 
-        user_name = user_info.name
-        user_profile = request.user.face_image_url
-        user_review_films = []
-
+        user_name    = user_info.name
+        user_profile = user_info.face_image_url
+    
         # 유저가 평가한 영화들
-        reviewed_films = Review.objects.filter(user = request.user).select_related('film')[0:10]
-        
-        for reviewed_film in reviewed_films:
-            reviewed_film_info = []
-            reviewed_film_info.append(reviewed_film.film.korean_title)
-            reviewed_film_info.append(reviewed_film.film.avg_rating)
-            reviewed_film_info.append(reviewed_film.film.poster_url)
-            user_review_films.append(reviewed_film_info)
+        reviewed_films = Review.objects.filter(user = user_info).select_related('film')[0:10]
 
-        user_info = {
-            "user_name":user_name,
-            "user_profile": user_profile,
-            "user_review_films":user_review_films
+        user_review_films = [
+            {   "title"      : reviewed_film.film.korean_title,
+                "rating"     : reviewed_film.score,
+                "poster_url" : reviewed_film.film.poster_url
+            } for reviewed_film in reviewed_films
+        ]
+
+        response = {
+            "user_name"         : user_name,
+            "user_profile"      : user_profile,
+            "user_review_films" : user_review_films
         }
 
-        return JsonResponse(user_info, status=200)
+        return JsonResponse(response, status=200)
