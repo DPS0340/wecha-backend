@@ -6,6 +6,8 @@ from json                   import JSONDecodeError
 
 from django.http            import JsonResponse
 from django.views           import View
+from django.db.models       import Avg
+
 
 from .utils                 import password_validation, token_authorization
 from film.models            import Film
@@ -112,14 +114,8 @@ class HandleReview(View):
                 ).save()
 
             # 해당 영화의 평균별점 재계산
-            review_set        = Review.objects.filter(film = film_info)
-            review_set_number = review_set.count()
-            total_rating      = 0
-
-            for review_element in review_set:
-                total_rating += review_element.score
-
-            film_info.avg_rating = total_rating / review_set_number
+            review_set           = film_info.review_set.values()
+            film_info.avg_rating = review_set.aggregate(Avg('score'))['score__avg']
             film_info.save()
 
             return JsonResponse({"message":"POST_REVIEW_SUCCESS"}, status=200)
@@ -143,22 +139,13 @@ class HandleReview(View):
             if not user_info: # 유저 정보가 없는 경우
                 return JsonResponse({"message": "INVALIDE_USER"}, status=400) 
 
+            # 리뷰 삭제
             Review.objects.get(film = film_info, user = user_info).delete()
             
             # 해당 영화의 평균별점 재계산
-            review_set        = Review.objects.filter(film = film_info)
-            review_set_number = review_set.count()
-            total_rating      = 0
-
-            for review_element in review_set:
-                total_rating += review_element.score
-            
-            if review_set_number == 0:
-                film_info.avg_rating = 0
-            else:
-                film_info.avg_rating = total_rating / review_set_number
-
-            film_info.save()        
+            review_set           = film_info.review_set.values()
+            film_info.avg_rating = review_set.aggregate(Avg('score'))['score__avg']
+            film_info.save()
 
             return JsonResponse({"message": "DELETE_REVIEW_SUCCESS"}, status=200)
 
@@ -171,7 +158,7 @@ class HandleReview(View):
 
 class ReviewCount(View):
     def get(self, request):
-        review_count = Review.objects.all().count()
+        review_count = Review.objects.count()
         return JsonResponse({"review_count":review_count}, status=200)
 
 class ReviewLike(View):
@@ -180,10 +167,10 @@ class ReviewLike(View):
         try:
             data         = json.loads(request.body)
             comment_id   = data['comment_id']
-            commnet_like = data['like_count']
+            comment_like = data['like_count']
 
-            comment            = Review.objects.get(id= comment_id)
-            comment.like_count = commnet_like
+            comment            = Review.objects.get(id = comment_id)
+            comment.like_count = comment_like
             comment.save()
 
             return JsonResponse({"message": "COMMENT_LIKE_SUCCESS"}, status=200)

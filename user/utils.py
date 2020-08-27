@@ -20,9 +20,9 @@ def token_authorization(func):
             user_info    = User.objects.get(id=payload['user_id'])                 
             request.user = user_info # user 정보를 request에 저장하여 이후 활용
 
-        except jwt.exceptions.DecodeError:                                     
+        except jwt.exceptions.DecodeError: #토큰이 없거나 토큰 형태가 유효하지 않는 경우                                    
             return JsonResponse({'message' : 'INVALID_TOKEN' }, status=400)
-        except User.DoesNotExist:                                        
+        except User.DoesNotExist:   
             request.user = None
 
         return func(self, request, *args, **kwargs)
