@@ -159,14 +159,11 @@ class FilmCollectionListView(View):
 class FilmCollectionDetailView(View):
     def get(self, request, collection_id):
         if Collection.objects.filter(id=collection_id).exists():
-            offset = int(request.GET.get('offset', 0))
-            limit  = int(request.GET.get('limit', 12))
-
             collection = Collection.objects.get(id=collection_id)
             
             body = {
                 "collection": make_collection_for_list_json(collection),
-                "films"     : make_films_for_list_json(collection.film.all()[offset: limit])
+                "films"     : make_films_for_list_json(collection.film.all())
             }
             return JsonResponse(body, status = 200)
 
